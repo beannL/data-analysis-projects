@@ -1,16 +1,17 @@
-# IS6400 数据分析课程作业集：数据质量、特征工程、聚类、分类与时间序列预测
+# IS6400 数据分析课程作业集：数据质量、特征工程、聚类、分类、模型选择与时间序列预测
 
 > 香港城市大学 · MSc in Electronic Commerce · IS6400 课程项目（个人独立完成）
 > 技术栈：Python / pandas / scikit-learn / statsmodels / Matplotlib / Seaborn
 
 ## 项目简介
 
-基于四个真实数据集，使用 Python 完成从**数据质量评估、探索性数据分析（EDA）、特征选择、无监督聚类分群、不平衡监督分类到时间序列预测**的完整数据分析流程：
+基于五个真实数据集，使用 Python 完成从**数据质量评估、探索性数据分析（EDA）、特征选择、无监督聚类分群、监督分类与模型选择、不平衡处理到时间序列预测**的完整数据分析流程：
 
 - **Airbnb 房源数据**：约 6.8 万条欧洲城市房源记录，覆盖房价、房源类型、容纳人数、评分等字段；
 - **Hotel Booking Demand 酒店预订数据**：119,390 条葡萄牙两家酒店的预订记录、32 个字段（Antonio et al., *Data in Brief*, 2019）；
 - **信用卡交易数据**：32,764 条脱敏交易记录（PCA 变换后的 V1–V28 特征），其中欺诈交易 492 条，用于不平衡分类与集成模型对比；
-- **气象数据（weather）**：德国 Jena 气象站 2009–2016 年小时级观测，重采样为 96 个月度平均温度，用于季节性时间序列建模与预测。
+- **气象数据（weather）**：德国 Jena 气象站 2009–2016 年小时级观测，重采样为 96 个月度平均温度，用于季节性时间序列建模与预测；
+- **乳腺癌诊断数据（breast cancer）**：scikit-learn 内置的 569 例细胞核测量记录、30 个数值特征（恶性 212 例 / 良性 357 例），用于分类器对比、超参数调优与嵌套交叉验证模型选择。
 
 ## Notebook 导航
 
@@ -25,6 +26,7 @@
 | [05_credit_card_fraud_classification.ipynb](notebooks/05_credit_card_fraud_classification.ipynb) | 信用卡欺诈检测：集成分类模型对比与不平衡处理 | 决策树、随机森林、Bagging、AdaBoost、Stacking 对比；准确率/精确率/召回率/F1 与混淆矩阵；`class_weight='balanced'` 类别加权 |
 | [06_bitcoin_time_series.ipynb](notebooks/06_bitcoin_time_series.ipynb) | Bitcoin 收盘价时间序列：平稳性检验与 ETS 预测 | ADF 单位根检验、一阶差分、ETS 水平模型 vs ETS 加趋势模型、RMSE 对比、滚动预测方法论 |
 | [07_weather_forecasting.ipynb](notebooks/07_weather_forecasting.ipynb) | 月度平均温度预测：ARIMA 与 ETS(Holt-Winters) 对比 | 重采样、KPSS 平稳性检验、Box-Cox 变换、去季节/去趋势、ARIMA 与 Holt-Winters 预测、RMSE 对比 |
+| [08_breast_cancer_model_comparison.ipynb](notebooks/08_breast_cancer_model_comparison.ipynb) | 乳腺癌诊断：分类器对比、超参数调优与模型选择 | 决策树/随机森林/SVC 默认参数对比；GridSearchCV 网格搜索；嵌套交叉验证（Nested CV）；SelectKBest、PCA 与 `class_weight='balanced'` 对比 |
 
 ## 主要分析结论
 
@@ -60,6 +62,11 @@
 - 对比两类模型：ARIMA 流水线测试集 RMSE ≈ 1.96，ETS（Holt-Winters，加性趋势 + 加性季节）RMSE ≈ 1.93；
 - 两者都能较好捕捉年度季节模式，**ETS 因直接建模趋势与季节成分，误差略低**。
 
+**模型选择与调优（乳腺癌）**
+- 默认参数下随机森林测试误差最小（0.028），优于 SVC（0.063）与单棵决策树（0.119），多棵树平均显著提升了稳定性；
+- 经网格搜索 + 嵌套交叉验证公平对比后，**SVC 调参后表现最好（平均嵌套 CV 准确率 0.9754，最优参数 C=1、gamma='scale'、rbf 核）**，反超随机森林（0.9561）；嵌套 CV 在每个外折内部重新搜索，避免测试数据泄漏导致的乐观偏差；
+- 进一步对比四种处理：PCA（10 维）平均准确率最高（0.9824），SelectKBest 反而降低准确率；`class_weight='balanced'` 保持准确率不变，同时将恶性漏判从 9 例降至 8 例（良性误报由 5 例升至 6 例）。
+
 ## 目录结构
 
 ```
@@ -79,14 +86,15 @@ data-analysis-projects/
     ├── 04_hotel_customer_segmentation.ipynb
     ├── 05_credit_card_fraud_classification.ipynb
     ├── 06_bitcoin_time_series.ipynb
-    └── 07_weather_forecasting.ipynb
+    ├── 07_weather_forecasting.ipynb
+    └── 08_breast_cancer_model_comparison.ipynb
 ```
 
 ## 复现方式
 
 1. 安装依赖：`pip install -r requirements.txt`
-2. 数据集已全部随仓库提供在 `data/` 目录，无需另行下载；
-3. 按 01 → 07 顺序运行各 notebook（Jupyter 中可 Kernel → Restart & Run All）。
+2. 数据集已全部随仓库提供在 `data/` 目录，无需另行下载；08 号 notebook 使用 scikit-learn 内置的乳腺癌数据集（`load_breast_cancer()`），无需额外数据文件；
+3. 按 01 → 08 顺序运行各 notebook（Jupyter 中可 Kernel → Restart & Run All）。
 
 ## 数据集来源
 
@@ -94,6 +102,7 @@ data-analysis-projects/
 - Hotel Booking Demand：Kaggle - [Hotel booking demand](https://www.kaggle.com/datasets/jessemostipak/hotel-booking-demand)，原始出处 Nuno Antonio, Ana Almeida, Luis Nunes, *Hotel booking demand datasets*, Data in Brief, 2019
 - 信用卡交易数据：课程提供的 `creditcard-reduced.csv` 为缩减版（32,764 条），母集为 Kaggle - [Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)（ULB - Université Libre de Bruxelles）
 - Iris：UCI / scikit-learn 经典教学数据集
+- 乳腺癌诊断数据：scikit-learn 内置数据集（`load_breast_cancer`），原始出处为 UCI Machine Learning Repository - [Breast Cancer Wisconsin (Diagnostic) Data Set](https://archive.ics.uci.edu/dataset/17/breast+cancer+wisconsin+diagnostic)
 - 气象数据：Max Planck Institute for Biogeochemistry 的 Jena Weather 数据集（课程提供）
 
 ## 说明
